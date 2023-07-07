@@ -1,3 +1,0 @@
-# Udemy Courses
-
-# Arrays Methods
