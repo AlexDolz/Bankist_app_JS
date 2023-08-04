@@ -192,8 +192,34 @@ const updateUI = acc => {
   calcDisplaySummary(acc);
 };
 
+const startLogOutTimer = () => {
+  const tick = () => {
+    // In eact call, print the remainitin time to User Interface
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+    labelTimer.textContent = `${min}:${sec}`;
+
+    // When 0 seconds, stop timer and log out user
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = `Log in to get started`;
+      containerApp.style.opacity = 0;
+    }
+
+    // Decrease 1s
+    time--;
+  };
+  // Set time to 5 minutes
+  let time = 300;
+
+  // Call timer every second
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 // Event handler
-let currentAccount;
+let currentAccount, timer;
 
 // FAKE ALWAYS LOGGED IN
 // currentAccount = account1;
@@ -237,6 +263,11 @@ btnLogin.addEventListener('click', e => {
 
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
+
+    if (timer) {
+      clearInterval(timer);
+    }
+    timer = startLogOutTimer();
     updateUI(currentAccount);
   }
 });
@@ -255,11 +286,17 @@ btnTransfer.addEventListener('click', e => {
     currentAccount.balance >= amount &&
     receiverAcc?.username !== currentAccount.username
   ) {
+    // Doing the transfer
     currentAccount.movements.push(-amount);
     receiverAcc.movements.push(amount);
+    // Add transfer date
     currentAccount.movementsDates.push(new Date().toISOString());
     receiverAcc.movementsDates.push(new Date().toISOString());
+    // Update UI
     updateUI(currentAccount);
+    // Reset timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
 });
 
@@ -269,14 +306,20 @@ btnLoan.addEventListener('click', e => {
   const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    // Add movement
-    currentAccount.movements.push(amount);
+    setTimeout(() => {
+      // Add movement
+      currentAccount.movements.push(amount);
 
-    // Add loan date
-    currentAccount.movementsDates.push(new Date().toISOString());
+      // Add loan date
+      currentAccount.movementsDates.push(new Date().toISOString());
 
-    // Update UI
-    updateUI(currentAccount);
+      // Update UI
+      updateUI(currentAccount);
+
+      // Reset timer
+      clearInterval(timer);
+      timer = startLogOutTimer();
+    }, 2500);
   }
   inputLoanAmount.value = '';
 });
@@ -302,6 +345,6 @@ let sorted = false;
 
 btnSort.addEventListener('click', e => {
   e.preventDefault();
-  displayMovements(currentAccount.movements, !sorted);
+  displayMovements(currentAccount, !sorted);
   sorted = !sorted;
 });
